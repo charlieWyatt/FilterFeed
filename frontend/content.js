@@ -1,7 +1,7 @@
 // this file only runs when the web page is loaded. That is not much video data, can get more 
 
 // in future should make a package.json and move things into other files
-// import addVideoToBackend from './services/backend'
+// import addVideosToBackend from './services/backend'
 
 
 let allVideos = document.querySelectorAll('ytd-rich-item-renderer');
@@ -10,10 +10,9 @@ console.log(allVideos)
 
 pagesVideoData = []
 
-// Instead of running the function on the button click - keep checking if there is a video length information
-// every 3 seconds. Once there is, call the function
-chrome.runtime.onMessage.addListener(gotMessage)
+chrome.runtime.onMessage.addListener(filterVideos)
 
+// runs every 3 seconds checking if video length has been loaded in. Once it has been, add all the loaded videos to the database
 var intervalId = window.setInterval(function(){
     tryReadVideoLength()
   }, 3000);
@@ -21,8 +20,8 @@ var intervalId = window.setInterval(function(){
 function tryReadVideoLength() {
     try{
         allVideos[1].querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
-        gotMessage()
-        clearInterval(intervalId) 
+        initalSetup()
+        clearInterval(intervalId) // stops running
     } catch(err) {
         console.log("No Video Length yet")
         console.log(err)
@@ -36,33 +35,7 @@ function hideEvenVideos(videos) {
     }
 }
 
-// in future, move this into backend.js
-function addVideoToBackend(videoData) {
-    // videoData is a json object
-    console.log(videoData)
-    fetch("http://127.0.0.1:5000/receiver", {
-            method: 'POST',
-            headers: {
-                'Content-type': 'application/json',
-                'Accept': 'application/json'
-        },
-        // Strigify the payload into JSON:
-        body:JSON.stringify(videoData)}).then(res=>{
-                if(res.ok){
-                    return res.json()
-                }else{
-                    alert("something is wrong")
-                }
-            }).then(jsonResponse=>{
-                
-                // Log the response data in the console
-                console.log(jsonResponse)
-            }).catch((err) => console.error(err));
-            
-    return;
-}
-
-// 
+// in future move this to backend.js
 function addVideosToBackend(videosDataList) {
     // videoData is a json object
     console.log(videosDataList)
@@ -155,9 +128,9 @@ function filterVideos(videos, filterPreferences) {
     return;
 }
 
-// This gets run on buttonclick
-function gotMessage(message=null, sender=null, sendResponse=null) {
-    let filterPreferences = {}
+// 
+function initalSetup() {
+    // let filterPreferences = {}
     // filterVideos(allVideos, filterPreferences)
     let videoOrder = 0
     for(var i = 0; i < allVideos.length; i+=1) {
@@ -165,7 +138,6 @@ function gotMessage(message=null, sender=null, sendResponse=null) {
         let videoData = getDataFromVideo(allVideos[i], videoOrder)
         if(videoData) {
             pagesVideoData.push(videoData)
-            // addVideoToBackend(videoData)
             videoOrder += 1 // there was a video, so increment the order you will see on screen
         }
     }
@@ -175,20 +147,4 @@ function gotMessage(message=null, sender=null, sendResponse=null) {
     console.log(pagesVideoData)
 
     getDataFromBackend()
-}
-
-
-
-// a bunch of testing things
-function changeVideoBackgroundColor(videos, color = '#FF00FF') {
-    for(video of videos) {
-        // loops through all the videos
-        video.style['background-color'] = color;
-    }
-}
-
-function changeEvenVideoBackgroundColor(videos, color = '#FFFF00') {
-    for(var i = 0; i < videos.length; i += 2) {
-        videos[i].style['background-color'] = color;
-    }
 }

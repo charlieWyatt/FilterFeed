@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Following Coding Train Tutorials",
+    "name": "FilterFeed",
     "version": "0.1",
     "content_scripts": [
         {
