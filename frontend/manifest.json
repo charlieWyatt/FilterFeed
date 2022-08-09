@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "Following Coding Train Tutorials",
+    "version": "0.1",
+    "content_scripts": [
+        {
+            "matches": ["*://*.youtube.com/*"],
+            "js": ["content.js"]
+        }
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "action": {
+        "default_icon": "popupIcon.png"
+    }
+}
