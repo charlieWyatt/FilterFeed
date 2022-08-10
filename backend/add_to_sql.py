@@ -6,7 +6,7 @@ import uuid
 
 app = Flask(__name__)
 # adds a database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///all_videos.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///yt_homepages.db'
 CORS(app)
 
 # initialise the database
@@ -15,7 +15,7 @@ db = SQLAlchemy(app)
 
 
 # Create Model
-class allVideos(db.Model):
+class YTHomepages(db.Model):
     # the grain of this model - each row represents a video from a users loaded page
     # will add in more AI / sentiment analysis things in here later
     id = db.Column(db.Integer, primary_key=True)
@@ -33,6 +33,7 @@ class allVideos(db.Model):
     videoLengthInSec = db.Column(db.String(200), nullable=True) # This should probably be an integer in number of seconds
     videoViews = db.Column(db.Integer, nullable=True)
     videoUploadDay = db.Column(db.String(200), nullable=True)
+    url = db.Column(db.String(300), nullable=True)
     dateAdded = db.Column(db.DateTime, default=datetime.utcnow)
 
     # create a string
@@ -61,7 +62,7 @@ def receiveVideo():
     data = request.get_json()
     print(data) # THIS IS THE DATA OF EACH VIDEO!
     # add each video to the database
-    video = allVideos(user="ME", orderOnScreen=data['orderOnScreen'], channelName=data['channelName'], videoName=data['videoName'], videoLengthInSec=data['videoLengthInSec'], videoViews=data['videoViews'], videoUploadDay=data['videoUploadDay'])
+    video = YTHomepages(user="ME", orderOnScreen=data['orderOnScreen'], channelName=data['channelName'], videoName=data['videoName'], videoLengthInSec=data['videoLengthInSec'], videoViews=data['videoViews'], videoUploadDay=data['videoUploadDay'])
     db.session.add(video)
     db.session.commit()
     data = jsonify(data)
@@ -74,12 +75,37 @@ def receiveVideos():
     # add each video to the database
     for video in videosData:
         print(video)
-        uploadVideo = allVideos(user="ME", refreshId=video['refreshId'], orderOnScreen=video['orderOnScreen'], channelName=video['channelName'], videoName=video['videoName'], videoLengthInSec=video['videoLengthInSec'], videoViews=video['videoViews'], videoUploadDay=video['videoUploadDay'])
+        uploadVideo = YTHomepages(user="ME", refreshId=video['refreshId'], orderOnScreen=video['orderOnScreen'], channelName=video['channelName'], videoName=video['videoName'], videoLengthInSec=video['videoLengthInSec'], videoViews=video['videoViews'], videoUploadDay=video['videoUploadDay'], url=video['url'])
         db.session.add(uploadVideo)
+        # getInDepthStats(uploadVideo)
     # commit all the videos from one refresh
     db.session.commit() # want all these videos committed during this refresh to have a unique ID
     videosData = jsonify(videosData)
+
     return videosData
+
+def getInDepthStats(videoUrl):
+    #    check if the url is already in the video database
+    #    if it isn't, add the following info
+    #      videoName
+    #      channelName
+    #      videoLengthInSec
+    #      videoViews (? this will change so maybe don't store ? I can do cool things with videos views if I can store when a user visits a video)
+    #      videoUploadDay
+    #      transcript
+    #        positivityScore
+    #        politicalScore
+    #        truthinessScore
+    #        countryOfOrigin
+    #        otherBias
+    #      comments
+    #
+    # things that will be tricky for -
+    # transcript -
+    #   Who is talking? i.e. in a news report, if they show something very right-wing as an example of something bad, 
+    #       that can sometimes be more left wing bias. We may not be able to get who is talking at all
+    #   timestamps. i.e. context to a sentence matters so trying to incorporate that is important
+
 
 
 if __name__ == '__main__':

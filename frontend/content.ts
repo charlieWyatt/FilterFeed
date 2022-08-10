@@ -20,9 +20,12 @@ const onLoad = () => {
   // every second, checks to see if the video length has loaded in yet because it's the last
   // thing to load in
   // should just change this into an async function...
+  // One way around this, is just to hand all the urls over to the backend, and then let the backend 
+  // go to each of the urls and scrape all the data. The urls appear first, and the backend has to 
+  // go to the video anyway to get the transcript data
   var intervalId = window.setInterval(function(){
     let allVideos = document.querySelectorAll('ytd-rich-item-renderer');
-    if(allVideos.length > 0) {
+    if(allVideos.length > 1) {
       if(tryReadVideoLength(allVideos)) {
         clearInterval(intervalId) 
         handleLoaded(allVideos, pageRefreshId)
@@ -97,10 +100,6 @@ function getDataFromVideo(video, orderOnScreen, pageRefreshId) {
   console.log(video)
   // videos 
   try {
-      // let textIdElements = video.querySelectorAll('#text')
-      // console.log(textIdElements)
-      // let videoLength = textIdElements[0].innerText.trim();
-      // let channelName = textIdElements[1].innerText
       let channelName = video.querySelectorAll("yt-formatted-string.ytd-channel-name")[0].innerText
       let videoLength = video.querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
       let videoLengthInSec = hmsToSecondsOnly(videoLength)
@@ -109,6 +108,24 @@ function getDataFromVideo(video, orderOnScreen, pageRefreshId) {
       let metaDataBlock = video.querySelectorAll('span.ytd-video-meta-block')
       let videoViews = metaDataBlock[0].innerText
       let videoUploadDay = metaDataBlock[1].innerText
+      let url = video.querySelectorAll('a.ytd-thumbnail')[0].href
+      
+      // put in the url into the data
+      // then when you give it to the backend this will be this algorithm run asynchronously
+      //  check if the url is already in the video database
+      //  if it isn't, add the following info
+      //    videoName
+      //    channelName
+      //    videoLengthInSec
+      //    videoViews (? this will change so maybe don't store ? I can do cool things with videos views if I can store when a user visits a video)
+      //    videoUploadDay
+      //    transcript
+      //      positivityScore
+      //      politicalScore
+      //      truthinessScore
+      //      countryOfOrigin
+      //      otherBias
+      //    comments
 
       let data = {
           "refreshId": pageRefreshId,
@@ -117,7 +134,8 @@ function getDataFromVideo(video, orderOnScreen, pageRefreshId) {
           "videoName": videoName,
           "videoLengthInSec": videoLengthInSec,
           "videoViews": videoViews,
-          "videoUploadDay": videoUploadDay
+          "videoUploadDay": videoUploadDay,
+          "url": url
       }
       return data
   } catch(err) {
