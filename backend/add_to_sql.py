@@ -72,10 +72,9 @@ def receiveVideos():
     videosData = request.get_json()
     print(videosData)
     # add each video to the database
-    uniqueRefreshID = str(uuid.uuid4())
     for video in videosData:
         print(video)
-        uploadVideo = allVideos(user="ME", refreshId=uniqueRefreshID, orderOnScreen=video['orderOnScreen'], channelName=video['channelName'], videoName=video['videoName'], videoLengthInSec=video['videoLengthInSec'], videoViews=video['videoViews'], videoUploadDay=video['videoUploadDay'])
+        uploadVideo = allVideos(user="ME", refreshId=video['refreshId'], orderOnScreen=video['orderOnScreen'], channelName=video['channelName'], videoName=video['videoName'], videoLengthInSec=video['videoLengthInSec'], videoViews=video['videoViews'], videoUploadDay=video['videoUploadDay'])
         db.session.add(uploadVideo)
     # commit all the videos from one refresh
     db.session.commit() # want all these videos committed during this refresh to have a unique ID
