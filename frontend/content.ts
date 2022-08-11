@@ -12,7 +12,6 @@ window.addEventListener("load", () => {
 })
 
 const onLoad = () => {
-  // @charliewyatt put your onLoad code here.
   let pageRefreshId = v4()
 
   
@@ -24,14 +23,14 @@ const onLoad = () => {
   // go to each of the urls and scrape all the data. The urls appear first, and the backend has to 
   // go to the video anyway to get the transcript data
   var intervalId = window.setInterval(function(){
-    let allVideos = document.querySelectorAll('ytd-rich-item-renderer');
-    if(allVideos.length > 1) {
-      if(tryReadVideoLength(allVideos)) {
+    let allThumbnails = document.querySelectorAll('ytd-rich-item-renderer');
+    if(allThumbnails.length > 1) {
+      if(tryReadVideoLength(allThumbnails)) {
         clearInterval(intervalId) 
-        handleLoaded(allVideos, pageRefreshId)
+        handleLoaded(allThumbnails, pageRefreshId)
       } 
     } else {
-      console.log('no videos yet')
+      console.log('no thumbnails yet')
     }
     
     
@@ -45,9 +44,9 @@ const onLoad = () => {
 /////////////////////////////////////////////////////////
 ///////////////// HELPER FUCTIONS ///////////////////////
 /////////////////////////////////////////////////////////
-function tryReadVideoLength(allVideos) {
+function tryReadVideoLength(allThumbnails) {
   try{
-      allVideos[1].querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
+      allThumbnails[1].querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
       return true
   } catch(err) {
       console.log("No Video Length yet")
@@ -56,9 +55,9 @@ function tryReadVideoLength(allVideos) {
   }
 }
 
-function addVideosToBackend(videosDataList) {
+function addThumbnailsToBackend(thumbnailsDataList) {
   // videoData is a json object
-  console.log(videosDataList)
+  console.log(thumbnailsDataList)
   fetch("http://127.0.0.1:5000/videosReceiver", {
           method: 'POST',
           headers: {
@@ -66,7 +65,7 @@ function addVideosToBackend(videosDataList) {
               'Accept': 'application/json'
       },
       // Strigify the payload into JSON:
-      body:JSON.stringify(videosDataList)}).then(res=>{
+      body:JSON.stringify(thumbnailsDataList)}).then(res=>{
               if(res.ok){
                   return res.json()
               }else{
@@ -94,21 +93,21 @@ function hmsToSecondsOnly(str) {
   return s;
 }
 
-function getDataFromVideo(video, orderOnScreen, pageRefreshId) {
+function getDataFromThumbnail(thumbnail, orderOnScreen, pageRefreshId) {
   // This must run once all the elements on the page have loaded. Video length is often slow to load
 
-  console.log(video)
+  console.log(thumbnail)
   // videos 
   try {
-      let channelName = video.querySelectorAll("yt-formatted-string.ytd-channel-name")[0].innerText
-      let videoLength = video.querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
+      let channelName = thumbnail.querySelectorAll("yt-formatted-string.ytd-channel-name")[0].innerText
+      let videoLength = thumbnail.querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
       let videoLengthInSec = hmsToSecondsOnly(videoLength)
       
-      let videoName = video.querySelector('#video-title').textContent
-      let metaDataBlock = video.querySelectorAll('span.ytd-video-meta-block')
+      let videoName = thumbnail.querySelector('#video-title').textContent
+      let metaDataBlock = thumbnail.querySelectorAll('span.ytd-video-meta-block')
       let videoViews = metaDataBlock[0].innerText
       let videoUploadDay = metaDataBlock[1].innerText
-      let url = video.querySelectorAll('a.ytd-thumbnail')[0].href
+      let url = thumbnail.querySelectorAll('a.ytd-thumbnail')[0].href
       
       // put in the url into the data
       // then when you give it to the backend this will be this algorithm run asynchronously
@@ -158,25 +157,25 @@ function getDataFromBackend() {
     });
 }
 
-function handleLoaded(allVideos, pageRefreshId) {
-  let pagesVideoData = []
+function handleLoaded(allThumbnails, pageRefreshId) {
+  let pagesThumbailData = []
 
   let filterPreferences = {}
   // filterVideos(allVideos, filterPreferences)
-  let videoOrder = 0
-  for(var i = 0; i < allVideos.length; i+=1) {
+  let thumbnailOrder = 0
+  for(var i = 0; i < allThumbnails.length; i+=1) {
       // loops through all the videos and adds the data to backend
-      let videoData = getDataFromVideo(allVideos[i], videoOrder, pageRefreshId)
-      if(videoData) {
-          pagesVideoData.push(videoData)
+      let thumbnailData = getDataFromThumbnail(allThumbnails[i], thumbnailOrder, pageRefreshId)
+      if(thumbnailData) {
+          pagesThumbailData.push(thumbnailData)
           // addVideoToBackend(videoData)
-          videoOrder += 1 // there was a video, so increment the order you will see on screen
+          thumbnailOrder += 1 // there was a video, so increment the order you will see on screen
       }
   }
   // should get all the videos and then pass them to the backend all at once
-  addVideosToBackend(pagesVideoData)
+  addThumbnailsToBackend(pagesThumbailData)
 
-  console.log(pagesVideoData)
+  console.log(pagesThumbailData)
 
   getDataFromBackend()
 }
