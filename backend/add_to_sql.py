@@ -74,7 +74,7 @@ class allVideos(db.Model):
     channelName = db.Column(db.String(100), nullable = True)
     channelUrl = db.Column(db.String(200), nullable = True)
     channelSubscribers = db.Column(db.String(100), nullable = True)
-    transcript = db.Column(db.String(10000), nullable = True)
+    transcript = db.Column(db.String(100000), nullable = True)
     dateFirstAdded = db.Column(db.DateTime, default=datetime.utcnow)
     dateLastAccessed = db.Column(db.DateTime, default=datetime.utcnow) # last time the video was accessed by this db
 
@@ -125,7 +125,7 @@ def receiveVideos():
             videoUpload = allVideos(url=videoInfo['url'], yt_id=videoInfo['yt_id'], title=videoInfo['title'], views=videoInfo['views'],
             description=videoInfo['description'], datePublished=videoInfo['date_published'], duration=thumbnail['videoLengthInSec'], tags=videoInfo['tags'],
             keywords=videoInfo['keywords'], likes=videoInfo['likes'], channelName=videoInfo['channel']['name'], channelUrl=videoInfo['channel']['url'],
-            channelSubscribers=videoInfo['channel']['subscribers']) # still need to add transcript
+            channelSubscribers=videoInfo['channel']['subscribers'], transcript=json.dumps(videoInfo['transcript'])) # still need to add transcript
             db.session.add(videoUpload)
             db.session.commit()
         else:
@@ -139,6 +139,7 @@ def receiveVideos():
             videoInDatabase.channelUrl = videoInfo['channel']['url']
             videoInDatabase.channelSubscribers = videoInfo['channel']['subscribers']
             videoInDatabase.dateLastAccessed = datetime.utcnow()
+            videoInDatabase.transcript=json.dumps(videoInfo['transcript'])
             db.session.commit()
     
     thumbnailsData = jsonify(thumbnailsData)
