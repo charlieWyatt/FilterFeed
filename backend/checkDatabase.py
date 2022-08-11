@@ -32,5 +32,13 @@ def select_all_tasks(conn):
         print(row)
 
 if __name__ == '__main__':
-    all_videos = create_connection("all_videos.db")
-    select_all_tasks(all_videos)
+    import argparse
+    parser = argparse.ArgumentParser(description="Shows all rows of SQL Database")
+    parser.add_argument("db", help="Name of the database you want to query")
+
+    args = parser.parse_args()
+    # parse the video URL from command line
+    db = args.db
+
+    database = create_connection(db)
+    select_all_tasks(database)
