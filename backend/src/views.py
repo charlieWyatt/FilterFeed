@@ -2,12 +2,13 @@ import json
 from datetime import datetime
 from flask import jsonify, request, Blueprint
 from flask_cors import CORS
-from yt_scraper import get_video_info
+from scraper.yt import get_video_info
 from models import db, YTHomepages, allVideos
 
 api = Blueprint("api", __name__)
 
-CORS(api, origins='*')
+CORS(api, origins="*")
+
 
 @api.route("/")
 def hello_world():
