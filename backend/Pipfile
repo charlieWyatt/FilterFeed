@@ -13,6 +13,7 @@ flask-cors = "*"
 flask-sqlalchemy = "*"
 rich = "*"
 flask-migrate = "*"
+colorama = "*"
 
 [dev-packages]
 
