@@ -24,7 +24,7 @@ def select_all_tasks(conn):
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT * FROM all_videos")
+    cur.execute("SELECT url, sentimentScore FROM all_videos")
 
     rows = cur.fetchall()
 

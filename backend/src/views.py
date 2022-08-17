@@ -4,6 +4,7 @@ from flask import jsonify, request, Blueprint
 from flask_cors import CORS
 from scraper.yt import get_video_info
 from models import db, YTHomepages, allVideos
+from sentimentAnalysis import transcript_sentiment_score
 
 api = Blueprint("api", __name__)
 
@@ -88,7 +89,8 @@ def receiveVideos():
                 channelUrl=videoInfo["channel"]["url"],
                 channelSubscribers=videoInfo["channel"]["subscribers"],
                 transcript=json.dumps(videoInfo["transcript"]),
-            )  # still need to add transcript
+                sentimentScore=transcript_sentiment_score(videoInfo['transcript'])
+            )  # still need to add transcript score
             db.session.add(videoUpload)
             db.session.commit()
         else:
