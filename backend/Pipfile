@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests-html = "*"
+youtube-transcript-api = "*"
+beautifulsoup4 = "*"
+sqlalchemy = "*"
+flask = "*"
+flask-cors = "*"
+flask-sqlalchemy = "*"
+rich = "*"
+flask-migrate = "*"
+colorama = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
