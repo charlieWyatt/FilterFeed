@@ -6,7 +6,7 @@ from transformers import pipeline
 sentiment_pipeline = pipeline("sentiment-analysis") # Should specify a model name in production. But for testing, this is fine
 
 def transcript_sentiment_score(transcript):
-    if len(transcript) < 1:
+    if not transcript:
         return None
     
     sentences = []
