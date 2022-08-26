@@ -55,7 +55,7 @@ function tryReadVideoLength(allThumbnails) {
   }
 }
 
-function addThumbnailsToBackend(thumbnailsDataList) {
+async function addThumbnailsToBackend(thumbnailsDataList) {
   // videoData is a json object
   console.log(thumbnailsDataList)
   fetch("http://127.0.0.1:5000/videosReceiver", {
@@ -158,10 +158,15 @@ function getDataFromBackend() {
 }
 
 function handleLoaded(allThumbnails, pageRefreshId) {
+  // this function should change so that every time a new video is loaded into the page, it gets passed to the addThumbnailsToBackend
+  // function
+  
   let pagesThumbailData = []
 
   let filterPreferences = {}
   // filterVideos(allVideos, filterPreferences)
+
+
   let thumbnailOrder = 0
   for(var i = 0; i < allThumbnails.length; i+=1) {
       // loops through all the videos and adds the data to backend
