@@ -86,6 +86,7 @@ class allVideos(db.Model):
     channelUrl = db.Column(db.String(200), nullable=True)
     channelSubscribers = db.Column(db.String(100), nullable=True)
     transcript = db.Column(db.String(100000), nullable=True)
+    sentimentScore = db.Column(db.Integer, nullable=True)
     dateFirstAdded = db.Column(db.DateTime, default=datetime.utcnow)
     dateLastAccessed = db.Column(
         db.DateTime, default=datetime.utcnow

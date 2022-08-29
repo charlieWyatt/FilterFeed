@@ -24,12 +24,20 @@ def select_all_tasks(conn):
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT * FROM all_videos")
+    cur.execute("SELECT url, sentimentScore FROM all_videos")
 
     rows = cur.fetchall()
 
     for row in rows:
         print(row)
+    
+def querySentiment():
+    database = create_connection("database.db")
+    cur = database.cursor()
+    cur.execute("SELECT AVG(sentimentScore) FROM all_videos")
+
+    rows = cur.fetchall()
+    return rows[0][0]
 
 if __name__ == '__main__':
     import argparse
