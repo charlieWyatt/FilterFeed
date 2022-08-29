@@ -10,9 +10,16 @@
     "build": "plasmo build"
   },
   "dependencies": {
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "@material-ui/lab": "^4.0.0-alpha.61",
+    "@mui/material": "^5.10.2",
     "plasmo": "0.50.1",
+    "prop-types": "^15.8.1",
     "react": "18.2.0",
+    "react-advanced-gauge-chart": "^0.2.7",
     "react-dom": "18.2.0",
+    "react-gauge-chart": "^0.4.0",
     "uuidv4": "^6.2.13"
   },
   "devDependencies": {

@@ -5,6 +5,7 @@ from flask_cors import CORS
 from scraper.yt import get_video_info
 from models import db, YTHomepages, allVideos
 from sentimentAnalysis import transcript_sentiment_score
+from checkDatabase import querySentiment
 import threading
 
 api = Blueprint("api", __name__)
@@ -28,6 +29,10 @@ def addData():
         print(request.get_json())  # parse as JSON
         return "Sucesss", 200
 
+@api.route("/getSentiment", methods=["GET"])
+def getSentiment():
+    # NEED TO SPECIFY A USER IN HERE
+    return jsonify(querySentiment())
 
 # I am in the process of depracting this. Will use videosReceiver instead
 @api.route("/receiver", methods=["POST"])
@@ -58,7 +63,7 @@ def receiveVideos():
     # we will be adding thumbnail data by multithreading
     # this array allows us to join all the threads right before this 
     # function finishes
-    threads = []
+    # threads = []
 
     # add each thumbnail and video to the database
     for thumbnail in thumbnailsData:
@@ -83,9 +88,12 @@ def receiveVideos():
             # video isn't yet in database, so add it in
 
             # this should be in a thread, that way, it doesn't have to finish one video before moving onto the next
-            t = threading.Thread(target=video_upload, args=[videoInfo, thumbnail])
-            t.start()
-            threads.append(t)
+            video_upload(videoInfo, thumbnail)
+            # t = threading.Thread(target=video_upload, args=[videoInfo, thumbnail])
+            # t.start()
+            # threads.append(t)
+            
+            
             # videoUpload = allVideos(
             #     url=videoInfo["url"],
             #     yt_id=videoInfo["yt_id"],
@@ -107,13 +115,13 @@ def receiveVideos():
             # db.session.commit()
         else:
             # video already exists in database, update all the info
-
-            t = threading.Thread(target=video_update, args=[videoInDatabase, videoInfo])
-            t.start()
-            threads.append(t)
+            video_update(videoInDatabase, videoInfo)
+            # t = threading.Thread(target=video_update, args=[videoInDatabase, videoInfo])
+            # t.start()
+            # threads.append(t)
     
-    for thread in threads:
-        thread.join
+    # for thread in threads:
+    #     thread.join
 
     thumbnailsData = jsonify(thumbnailsData)
 

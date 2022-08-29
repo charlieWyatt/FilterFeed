@@ -27,16 +27,16 @@ def transcript_sentiment_score(transcript):
             summary_of_scores['NEGATIVE'] += scores['score']
         else:
             summary_of_scores['NUM_UNKNOWN'] += 1
-    
-    return summary_of_scores["POSITIVE"] - summary_of_scores["NEGATIVE"]
+    final_score = (summary_of_scores['POSITIVE'] - summary_of_scores['NEGATIVE']) / (summary_of_scores["NUM_POSITIVE"] + summary_of_scores["NUM_NEGATIVE"])
+    return final_score
 
-# # # Get a transcript
-# sqliteConnection = sqlite3.connect('../database.db')
+# # Get a transcript
+# sqliteConnection = sqlite3.connect('./database.db')
 # cursor = sqliteConnection.cursor()
 # cursor.execute("SELECT * FROM all_videos;")
 
 # rows = cursor.fetchall()
-# test_row = 85
+# test_row = 2
 
 # i = 0
 # while i < len(rows[test_row]):
@@ -75,11 +75,12 @@ def transcript_sentiment_score(transcript):
 
 # print(sentiment_score)
 # print(summary_of_scores)
+# final_score = (summary_of_scores['POSITIVE'] - summary_of_scores['NEGATIVE']) / (summary_of_scores["NUM_POSITIVE"] + summary_of_scores["NUM_NEGATIVE"])
+# print(final_score)
 
+# # for row in rows:
+# #     print(row)
 
-# for row in rows:
-#     print(row)
+# # change it to a long string
 
-# change it to a long string
-
-# perform sentiment analysis
+# # perform sentiment analysis
