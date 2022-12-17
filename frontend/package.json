@@ -3,7 +3,7 @@
   "displayName": "Filterfeed",
   "version": "0.0.0",
   "description": "A basic Plasmo extension.",
-  "author": "tomhill",
+  "author": "charliewyatt",
   "packageManager": "yarn@1.22.18",
   "scripts": {
     "dev": "plasmo dev",
@@ -36,6 +36,9 @@
     "util": "^0.12.4"
   },
   "manifest": {
+    "permissions": [
+      "identity", "identity.email"
+    ],
     "host_permissions": [
       "https://*/*"
     ]

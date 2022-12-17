@@ -39,6 +39,17 @@ def querySentiment():
     rows = cur.fetchall()
     return rows[0][0]
 
+def queryVideoSentiment(youtubeId):
+    database = create_connection("database.db")
+    cur = database.cursor()
+    cur.execute(f"SELECT sentimentScore FROM all_videos where yt_id='{youtubeId}'")
+
+    rows = cur.fetchall()
+    try:
+        return rows[0][0]
+    except:
+        return None # video has no transcript
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="Shows all rows of SQL Database")
@@ -50,3 +61,5 @@ if __name__ == '__main__':
 
     database = create_connection(db)
     select_all_tasks(database)
+
+    print(queryVideoSentiment("wQWP-32HU84"))

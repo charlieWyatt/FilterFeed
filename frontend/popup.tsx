@@ -15,10 +15,14 @@ let political_filter_value = (POLITICAL_MIN + POLITICAL_MAX)/2 // NEED TO CHANGE
 // SHOULD USE THIS FOR THE SLIDER - 
 // https://github.com/mui/material-ui/blob/v5.10.2/docs/data/material/components/slider/RangeSlider.tsx
 
+
+
 function IndexPopup() {
   const [data, setData] = useState("")
-
-
+  chrome.identity.getProfileUserInfo({'accountStatus': 'ANY'}, function(info) {
+    console.log(info.email);
+    console.log(info);
+  })
 
 async function getSentimentSummary() {
   var sentimentResponse = await fetch("http://127.0.0.1:5000/getSentiment")
@@ -67,6 +71,7 @@ useEffect(() => {
           {/*Graphs to include - Positivity, left wing / right wing */}
         </div>
       </div>
+      <button class="flex justify-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Share</button>
     </div>
   )
 }

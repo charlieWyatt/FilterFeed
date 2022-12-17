@@ -1,11 +1,12 @@
 import json
 from datetime import datetime
+from webbrowser import get
 from flask import jsonify, request, Blueprint
 from flask_cors import CORS
 from scraper.yt import get_video_info
 from models import db, YTHomepages, allVideos
 from sentimentAnalysis import transcript_sentiment_score
-from checkDatabase import querySentiment
+from checkDatabase import querySentiment, queryVideoSentiment
 import threading
 
 api = Blueprint("api", __name__)
@@ -33,6 +34,10 @@ def addData():
 def getSentiment():
     # NEED TO SPECIFY A USER IN HERE
     return jsonify(querySentiment())
+
+@api.route("/getVideoSentiment/<youtubeId>", methods=["GET"]) # this should probably be GET, but I need to give it some information to get the right video, and since GET requests can't take a body argument, this was the easiest solution
+def getVideoSentiment(youtubeId):
+    return {"sentiment": queryVideoSentiment(youtubeId)}
 
 # I am in the process of depracting this. Will use videosReceiver instead
 @api.route("/receiver", methods=["POST"])
@@ -69,7 +74,7 @@ def receiveVideos():
     for thumbnail in thumbnailsData:
         print(thumbnail)
         uploadThumbnail = YTHomepages(
-            user="ME",
+            user="ME", # should change this to chrome.identity.getProfileUserInfo() need to google more how it works
             refreshId=thumbnail["refreshId"],
             orderOnScreen=thumbnail["orderOnScreen"],
             channelName=thumbnail["channelName"],
@@ -83,7 +88,10 @@ def receiveVideos():
         videoInfo = get_video_info(thumbnail["url"])
         videoInDatabase = allVideos.query.filter_by(
             url=thumbnail["url"]
-        ).first()  # checks if the url is already in the database
+        ).first()  # checks if the url is already in the database THIS ISNT RIGHT. NEED TO HAVE MULTIPLE VIDEOS BASED ON ACCESSING OF DIFFERENT USERS
+        # INSTEAD SHOULD DO -
+        # for a user view - video_id, date clicked
+        # then can join to the video table which has all the relevant information
         if not videoInDatabase:
             # video isn't yet in database, so add it in
 
@@ -140,11 +148,17 @@ def video_upload(videoInfoJson, thumbnail):
         datePublished=videoInfoJson["date_published"],
         duration=thumbnail["videoLengthInSec"],
         tags=videoInfoJson["tags"],
-        keywords=videoInfoJson["keywords"],
-        likes=videoInfoJson["likes"],
+        # categoryId=videoInfoJson["categoryId"],
+        # likeCount=videoInfoJson["likes"],
+        # commentCount = videoInfoJson["commentCount"],
         channelName=videoInfoJson["channel"]["name"],
         channelUrl=videoInfoJson["channel"]["url"],
         channelSubscribers=videoInfoJson["channel"]["subscribers"],
+        # channelDescription= videoInfoJson["channel"]['description'],
+        # channelViewCount= videoInfoJson["channel"]['viewCount'],
+        # channelVideoCount= videoInfoJson["channel"]['videoCount'],
+        # channelId = videoInfoJson["channelId"], 
+        # defaultLanguage = videoInfoJson["defaultLanguage"],
         transcript=json.dumps(videoInfoJson["transcript"]),
         sentimentScore=transcript_sentiment_score(videoInfoJson['transcript'])
     )  # still need to add transcript score
@@ -157,11 +171,14 @@ def video_update(videoInDatabase, videoInfoJson):
     videoInDatabase.title = videoInfoJson["title"]
     videoInDatabase.description = videoInfoJson["description"]
     videoInDatabase.views = videoInfoJson["views"]
-    videoInDatabase.keywords = videoInfoJson["keywords"]
-    videoInDatabase.likes = videoInfoJson["likes"]
+    #videoInDatabase.keywords = videoInfoJson["keywords"]
+    #videoInDatabase.likes = videoInfoJson["likes"]
     videoInDatabase.channelName = videoInfoJson["channel"]["name"]
     videoInDatabase.channelUrl = videoInfoJson["channel"]["url"]
     videoInDatabase.channelSubscribers = videoInfoJson["channel"]["subscribers"]
+    #videoInDatabase.channelViewCount = videoInfoJson["channel"]['viewCount']
+    #videoInDatabase.channelVideoCount = videoInfoJson["channel"]['videoCount']
+    #videoInDatabase.channelDescription = videoInfoJson['channel']['description']
     videoInDatabase.dateLastAccessed = datetime.utcnow()
     videoInDatabase.transcript = json.dumps(videoInfoJson["transcript"])
     db.session.commit()

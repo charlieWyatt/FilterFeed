@@ -5,91 +5,75 @@ import json
 import urllib.parse as urlparse
 from youtube_transcript_api import YouTubeTranscriptApi
 
+# needed for youtube api
+import os
+import googleapiclient.discovery
+
 # init session
 session = HTMLSession()
 
+api_key = 'AIzaSyAR7C-Yu99l_R1sGzumwZyEUBeWEpcg-rE'
+
 
 def get_video_info(url):
-    response = session.get(url)
-    # create beautiful soup object to parse HTML
-    soup = bs(response.html.html, "html.parser")
-    # initialize the result
+
+    # Should swap a lot of this out with the YouTube API
+
+    vid_id = video_id(url)
+    
+    # Get credentials and create an API client
+    youtube = googleapiclient.discovery.build(
+        'youtube', 'v3', developerKey=api_key)
+
+    request = youtube.videos().list(
+        part="id,status,statistics,topicDetails,snippet",
+        id=vid_id
+    )
+    response = request.execute()
+    video_response = response['items'][0]
+
+    request = youtube.channels().list(
+        part="snippet,statistics,topicDetails,status,brandingSettings,contentOwnerDetails",
+        id=video_response['snippet']['channelId']
+    )
+    response = request.execute()
+    channel_response = response['items'][0]
+
+    channel = {
+        "name": channel_response['snippet']['title'],
+        "description": channel_response['snippet']['description'] if 'description' in channel_response['snippet'] else None,
+        "url": channel_response['snippet']['customUrl'] if 'customUrl' in channel_response['snippet'] else None, # not sure if every channel has a customUrl
+        "subscribers": channel_response['statistics']['subscriberCount'] if 'subscriberCount' in channel_response['statistics'] else None,
+        "viewCount": channel_response['statistics']['viewCount'] if 'viewCount' in channel_response['statistics'] else None,
+        "videoCount": channel_response['statistics']['videoCount'] if 'videoCount' in channel_response['statistics'] else None,
+        "id": video_response['snippet']['channelId'],
+        "creationDate": channel_response['snippet']['publishedAt'] if 'publishedAt' in channel_response['snippet'] else None
+        # there are more stuff I can get at a later date
+    }
+    
+    # if video_response['snippet']['defaultLanguage']:
+    #     language = video_response['snippet']['defaultLanguage']
+    # else:
+    #     language = "N/A"
+
     result = {
       "url": url,
-      "yt_id": video_id(url),
-      "title": soup.find("meta", itemprop="name")["content"],
-      "views": soup.find("meta", itemprop="interactionCount")["content"],
-      "description": soup.find("meta", itemprop="description")["content"],
-      "date_published": soup.find("meta", itemprop="datePublished")["content"],
+      "yt_id": vid_id,
+      "title": video_response['snippet']['title'] if 'title' in video_response['snippet'] else None,
+      "views": video_response['statistics']['viewCount'] if 'viewCount' in video_response['statistics'] else None,
+      "likes": video_response['statistics']['likeCount'] if 'likeCount' in video_response['statistics'] else None,
+      "commentCount": video_response['statistics']['commentCount'] if 'commentCount' in video_response['statistics'] else None,
+      "channel_title": video_response['snippet']['channelTitle'] if 'channelTitle' in video_response['snippet'] else None,
+      "channelId": video_response['snippet']['channelId'] if 'channelId' in video_response['snippet'] else None,
+      "description": video_response['snippet']['description'] if 'description' in video_response['snippet'] else None,
+      "date_published": video_response['snippet']['publishedAt'] if 'publishedAt' in video_response['snippet'] else None,
       "tags": ", ".join(
-        [
-            meta.attrs.get("content")
-            for meta in soup.find_all("meta", {"property": "og:video:tag"})
-        ]),
-      "keywords": soup.find("meta", {"name": "keywords"})["content"],
+        video_response['snippet']['tags']) if 'tags' in video_response['snippet'] else None,
+      "categoryId": video_response['snippet']['categoryId'] if 'categoryId' in video_response['snippet'] else None,
+      "defaultLanguage": video_response['snippet']['defaultLanguage'] if 'defaultLanguage' in video_response['snippet'] else None, # some videos do not have default language
+      "channel": channel
+      # "keywords": soup.find("meta", {"name": "keywords"})["content"],
     }
-
-    data = re.search(r"var ytInitialData = ({.*?});", soup.prettify()).group(1)
-    data_json = json.loads(data)
-    # print(data_json['contents']['twoColumnWatchNextResults']['results']['results']['contents'])
-    try:
-        videoPrimaryInfoRenderer = data_json["contents"]["twoColumnWatchNextResults"][
-            "results"
-        ]["results"]["contents"][0]["videoPrimaryInfoRenderer"]
-        videoSecondaryInfoRenderer = data_json["contents"]["twoColumnWatchNextResults"][
-            "results"
-        ]["results"]["contents"][1]["videoSecondaryInfoRenderer"]
-    except:
-        # This is needed very occasionally... see here - https://www.youtube.com/UCqnbDFdCpuN8CMEg0VuEBqA
-        videoPrimaryInfoRenderer = data_json["contents"]["twoColumnWatchNextResults"][
-            "results"
-        ]["results"]["contents"][1]["videoPrimaryInfoRenderer"]
-        videoSecondaryInfoRenderer = data_json["contents"]["twoColumnWatchNextResults"][
-            "results"
-        ]["results"]["contents"][2]["videoSecondaryInfoRenderer"]
-    # number of likes
-    likes_label = videoPrimaryInfoRenderer["videoActions"]["menuRenderer"][
-        "topLevelButtons"
-    ][0]["toggleButtonRenderer"]["defaultText"]["accessibility"]["accessibilityData"][
-        "label"
-    ]  # "No likes" or "###,### likes"
-    likes_str = likes_label.split(" ")[0].replace(",", "")
-    result["likes"] = "0" if likes_str == "No" else likes_str
-    # number of likes (old way) doesn't always work
-    # text_yt_formatted_strings = soup.find_all("yt-formatted-string", {"id": "text", "class": "ytd-toggle-button-renderer"})
-    # result["likes"] = ''.join([ c for c in text_yt_formatted_strings[0].attrs.get("aria-label") if c.isdigit() ])
-    # result["likes"] = 0 if result['likes'] == '' else int(result['likes'])
-    # number of dislikes - YouTube does not publish this anymore...
-    # result["dislikes"] = ''.join([ c for c in text_yt_formatted_strings[1].attrs.get("aria-label") if c.isdigit() ])
-    # result["dislikes"] = '0' if result['dislikes'] == '' else result['dislikes']
-    result["dislikes"] = "UNKNOWN"
-    # channel details
-    channel_tag = soup.find("meta", itemprop="channelId")["content"]
-    # channel name
-    channel_name = soup.find("span", itemprop="author").next.next["content"]
-    # channel URL
-    # channel_url = soup.find("span", itemprop="author").next['href']
-    channel_url = f"https://www.youtube.com/channel/{channel_tag}"
-    # number of subscribers as str
-    channel_subscribers = videoSecondaryInfoRenderer["owner"]["videoOwnerRenderer"][
-        "subscriberCountText"
-    ]["accessibility"]["accessibilityData"]["label"]
-    # channel details (old way)
-    # channel_tag = soup.find("yt-formatted-string", {"class": "ytd-channel-name"}).find("a")
-    # # channel name (old way)
-    # channel_name = channel_tag.text
-    # # channel URL (old way)
-    # channel_url = f"https://www.youtube.com{channel_tag['href']}"
-    # number of subscribers as str (old way)
-    # channel_subscribers = soup.find("yt-formatted-string", {"id": "owner-sub-count"}).text.strip()
-    result["channel"] = {
-        "name": channel_name,
-        "url": channel_url,
-        "subscribers": channel_subscribers,
-    }
-
-    # result['transcript'] = soup.find_all("div", class_="segment-text style-scope ytd-transcript-segment-renderer")
-    # result['transcript'] = soup.select("#segments-container > ytd-transcript-segment-renderer.style-scope.ytd-transcript-segment-list-renderer.active > div")
     try:
         result["transcript"] = YouTubeTranscriptApi.get_transcript(
             result["yt_id"]
@@ -144,11 +128,12 @@ if __name__ == "__main__":
     print(f"Published at: {data['date_published']}")
     # print(f"Video Duration: {data['duration']}")
     print(f"Video tags: {data['tags']}")
-    print(f"Video keywords: {data['keywords']}")
-    print(f"Likes: {data['likes']}")
-    print(f"Dislikes: {data['dislikes']}")
+    # print(f"Video keywords: {data['keywords']}")
+    print(f"Likes: {data['likeCount']}")
+    # print(f"Dislikes: {data['dislikes']}")
     print(f"\nDescription: {data['description']}\n")
-    print(f"\nChannel Name: {data['channel']['name']}")
+    print(f"\nChannel Name: {data['channel_title']}")
+    print(f"\nChannel Id: {data['channelId']}")
     print(f"Channel URL: {data['channel']['url']}")
     print(f"Channel Subscribers: {data['channel']['subscribers']}")
     print(f"Transcript: {data['transcript']}")
