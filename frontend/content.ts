@@ -1,9 +1,6 @@
 import type { PlasmoContentScript } from "plasmo"
 import { v4 } from "uuid"
 
-// want to try suggesting videos based on liked / viewed ratio
-
-
 
 export const config: PlasmoContentScript = {
   matches: ["*://*.youtube.com/*"]
