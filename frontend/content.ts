@@ -117,20 +117,13 @@ async function displaySentiment(thumbnails) {
   for(var thumbnail of thumbnails) {
     var text = document.createTextNode("This just got added");
     var thumbnailURLSection = thumbnail.querySelectorAll('a.ytd-thumbnail')[0]
-    console.log(thumbnailURLSection)
     if(thumbnailURLSection) {
       var thumbnailURL = thumbnailURLSection.href
       var youtubeId = String(thumbnailURL).split("=")[1]
-      console.log(thumbnailURL)
-      console.log(youtubeId)
       var sentimentScore = await fetch("http://127.0.0.1:5000/getVideoSentiment/" + youtubeId).then(response => {return response.json()})
-      // var sentimentScore = await fetch("http://127.0.0.1:5000/getVideoSentiment")
-      console.log(sentimentScore)
-      console.log(thumbnail)
       var sentimentSection = document.createElement('div')
       sentimentSection.setAttribute("class", "sentimentSection")
-      sentimentSection.innerHTML = sentimentScore['sentiment']
-      console.log(sentimentSection)
+      sentimentSection.innerHTML = sentimentScore['sentiment'] + " " + thumbnail.querySelector("#video-title").textContent
       thumbnail.appendChild(sentimentSection);
     }
     

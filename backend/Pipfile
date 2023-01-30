@@ -15,8 +15,10 @@ rich = "*"
 flask-migrate = "*"
 colorama = "*"
 google-api-python-client = "*"
+transformers = "*"
+tensorflow = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.7"
