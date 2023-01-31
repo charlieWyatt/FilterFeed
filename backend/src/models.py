@@ -42,9 +42,8 @@ class YTHomepages(db.Model):
     # the grain of this model - each row represents a video from a users loaded page
     # will add in more AI / sentiment analysis things in here later
     id = db.Column(db.Integer, primary_key=True)
-    # Need to put in here the UserID. Don't have a way to get this at the moment
-    # check this link https://developer.chrome.com/docs/webstore/identify_user/
-    user = db.Column(db.String(200), nullable=True)
+    userId = db.Column(db.String(100), nullable=True)
+    userEmail = db.Column(db.String(100), nullable=True)
     refreshId = db.Column(
         db.String(200), nullable=True
     )  # This is how to identify which video belong to which refresh of a user
@@ -58,7 +57,7 @@ class YTHomepages(db.Model):
     videoLengthInSec = db.Column(
         db.String(200), nullable=True
     )  # This should probably be an integer in number of seconds
-    videoViews = db.Column(db.Integer, nullable=True)
+    videoViews = db.Column(db.String(200), nullable=True) # this should probable be an integer
     videoUploadDay = db.Column(db.String(200), nullable=True)
     url = db.Column(db.String(300), nullable=True)
     dateAdded = db.Column(db.DateTime, default=datetime.utcnow)

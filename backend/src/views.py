@@ -39,27 +39,6 @@ def getSentiment():
 def getVideoSentiment(youtubeId):
     return {"sentiment": queryVideoSentiment(youtubeId)}
 
-# I am in the process of depracting this. Will use videosReceiver instead
-@api.route("/receiver", methods=["POST"])
-def receiveVideo():
-    data = request.get_json()
-    print(data)  # THIS IS THE DATA OF EACH VIDEO!
-    # add each video to the database
-    video = YTHomepages(
-        user="ME",
-        orderOnScreen=data["orderOnScreen"],
-        channelName=data["channelName"],
-        videoName=data["videoName"],
-        videoLengthInSec=data["videoLengthInSec"],
-        videoViews=data["videoViews"],
-        videoUploadDay=data["videoUploadDay"],
-    )
-    db.session.add(video)
-    db.session.commit()
-    data = jsonify(data)
-    return data
-
-
 @api.route("/videosReceiver", methods=["POST"])
 def receiveVideos():
     thumbnailsData = request.get_json()
@@ -74,7 +53,8 @@ def receiveVideos():
     for thumbnail in thumbnailsData:
         print(thumbnail)
         uploadThumbnail = YTHomepages(
-            user="ME", # should change this to chrome.identity.getProfileUserInfo() need to google more how it works
+            userId=thumbnail["userId"], # should change this to chrome.identity.getProfileUserInfo() need to google more how it works
+            userEmail=thumbnail["userEmail"],
             refreshId=thumbnail["refreshId"],
             orderOnScreen=thumbnail["orderOnScreen"],
             channelName=thumbnail["channelName"],

@@ -15,7 +15,8 @@ window.addEventListener("load", () => {
 const onLoad = async () => {
   // Get the users information
   const response = await chrome.runtime.sendMessage({greeting: "userInfo"});
-  console.log(response);
+  const userEmail = response.userInfo.email
+  const userId = response.userInfo.id
   // (async () => {
   //   console.log("HOLA")
   //   const response = await chrome.runtime.sendMessage({greeting: "userInfo"});
@@ -30,7 +31,7 @@ const onLoad = async () => {
     if(allThumbnails.length > 1) {
       if(tryReadVideoLength(allThumbnails)) {
         clearInterval(intervalId) 
-        handleLoaded(allThumbnails, pageRefreshId)
+        handleLoaded(allThumbnails, pageRefreshId, userId, userEmail)
         await displaySentiment(allThumbnails)
         handleFilter(allThumbnails, [-1, 1])
       } 
@@ -118,6 +119,7 @@ async function displaySentiment(thumbnails) {
       var thumbnailURL = thumbnailURLSection.href
       var youtubeId = String(thumbnailURL).split("=")[1]
       var sentimentScore = await fetch("http://127.0.0.1:5000/getVideoSentiment/" + youtubeId).then(response => {return response.json()})
+      // instead of doing the above, I could shrink the thumbnail and add bars on the top which display the positivity and the political bias
       var sentimentSection = document.createElement('div')
       sentimentSection.setAttribute("class", "sentimentSection")
       sentimentSection.innerHTML = sentimentScore['sentiment'] + " " + thumbnail.querySelector("#video-title").textContent
@@ -176,7 +178,7 @@ function hmsToSecondsOnly(str) {
   return s;
 }
 
-function getDataFromThumbnail(thumbnail, orderOnScreen, pageRefreshId) {
+function getDataFromThumbnail(thumbnail, orderOnScreen, pageRefreshId, userId, userEmail) {
   // This must run once all the elements on the page have loaded. Video length is often slow to load
 
   // INSTEAD OF ALL THIS.... TRY USING THIS - https://developers.google.com/youtube/v3/docs/videos 
@@ -199,6 +201,8 @@ function getDataFromThumbnail(thumbnail, orderOnScreen, pageRefreshId) {
       // it got run when I refreshed the YT page 
 
       let data = {
+          "userId": userId,
+          "userEmail": userEmail,
           "refreshId": pageRefreshId,
           "orderOnScreen": orderOnScreen,
           "channelName": channelName,
@@ -210,7 +214,7 @@ function getDataFromThumbnail(thumbnail, orderOnScreen, pageRefreshId) {
       }
       return data
   } catch(err) {
-      // the above sometimes breaks when the video is an add or something
+      // the above sometimes breaks when the video is an ad or something
       console.log(err)
       return null
   }
@@ -250,7 +254,7 @@ function handleFilter(allThumbnails, sentimentRange) {
   console.log(allThumbnails.length) // checking to see if we still have all the thumbnails so we can show again if necessary
 }
 
-function handleLoaded(allThumbnails, pageRefreshId) {
+function handleLoaded(allThumbnails, pageRefreshId, userId = null, userEmail = null) {
   let pagesThumbailData = []
 
   let filterPreferences = {}
@@ -258,7 +262,7 @@ function handleLoaded(allThumbnails, pageRefreshId) {
   let thumbnailOrder = 0
   for(var i = 0; i < allThumbnails.length; i+=1) {
       // loops through all the videos and adds the data to backend
-      let thumbnailData = getDataFromThumbnail(allThumbnails[i], thumbnailOrder, pageRefreshId)
+      let thumbnailData = getDataFromThumbnail(allThumbnails[i], thumbnailOrder, pageRefreshId, userId, userEmail)
       if(thumbnailData) {
           pagesThumbailData.push(thumbnailData)
           // addVideoToBackend(videoData)
