@@ -1,6 +1,7 @@
 # Just being used to query database atm
 import sqlite3
 
+# FOR DEBUGGING - MY USER ID IS - 114168235507190878569
 
 # Code taken from here - https://www.sqlitetutorial.net/sqlite-python/sqlite-python-select/ 
 def create_connection(db_file):
@@ -31,13 +32,60 @@ def select_all_tasks(conn):
     for row in rows:
         print(row)
     
-def querySentiment():
+def querySentiment(userId, startDate, endDate, homepage, clicked):
+    # need to add userId to the query
     database = create_connection("database.db")
     cur = database.cursor()
     cur.execute("SELECT AVG(sentimentScore) FROM all_videos")
 
     rows = cur.fetchall()
     return rows[0][0]
+
+def queryFavCategories(userId, startDate, endDate, homepage, clicked):
+    print(homepage)
+    print(clicked)
+    print(startDate)
+    print(endDate)
+    database = create_connection("database.db")
+    cur = database.cursor()
+    if homepage == "true" and clicked == "true":
+        cur.execute(f'''
+        SELECT av.CategoryId, COUNT(*) 
+        FROM yt_homepages yth 
+        LEFT JOIN all_videos av 
+            ON yth.url = av.url 
+        LEFT JOIN watched_videos wv 
+            ON wv.url = yth.url 
+        WHERE yth.userId='{str(userId)}' AND yth.dateAdded >= '{str(startDate)}' AND yth.dateAdded <= '{endDate}' 
+        GROUP BY av.CategoryId
+
+        UNION
+
+        SELECT av.CategoryId, COUNT(*) 
+        FROM watched_videos wv 
+        LEFT JOIN all_videos av 
+            ON wv.url = av.url 
+        LEFT JOIN yt_homepages yth 
+            ON wv.url = yth.url 
+        WHERE yth.userId='{str(userId)}' AND yth.dateAdded >= '{str(startDate)}' AND yth.dateAdded <= '{endDate}' 
+        GROUP BY av.CategoryId;
+            ''')
+    elif clicked == "true":
+        # not sure if there is a dateAdded column here
+        cur.execute("SELECT av.CategoryId, COUNT(*) FROM watched_videos wv LEFT JOIN all_videos av ON wv.url = av.url WHERE userId='"+str(userId)+"' AND dateAdded >= '" + str(startDate) + "' AND dateAdded <= '"+ str(endDate) + "' GROUP BY av.CategoryId")
+    elif homepage == "true":
+        cur.execute("SELECT av.CategoryId, COUNT(*) FROM yt_homepages yth LEFT JOIN all_videos av ON yth.url = av.url WHERE userId='"+str(userId)+"' AND dateAdded >= '" + str(startDate) + "' AND dateAdded <= '"+ str(endDate) + "' GROUP BY av.CategoryId")
+    rows = cur.fetchall()
+    return rows
+
+def queryFirstDate(userId):
+    # just return the first date the user saw a homepage
+    database = create_connection("database.db")
+    cur = database.cursor()
+    cur.execute("SELECT min(dateAdded) FROM yt_homepages WHERE userId='"+str(userId)+"'")
+
+    rows = cur.fetchall()
+    return rows[0]
 
 def queryVideoSentiment(youtubeId):
     database = create_connection("database.db")
@@ -60,6 +108,6 @@ if __name__ == '__main__':
     db = args.db
 
     database = create_connection(db)
-    select_all_tasks(database)
+    # watchedVideos.__table__.drop()
 
-    print(queryVideoSentiment("wQWP-32HU84"))
+    print(queryFavCategories(114168235507190878569, '2010-1-1', '2023-2-15', True, False))

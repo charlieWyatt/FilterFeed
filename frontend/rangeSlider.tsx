@@ -14,6 +14,7 @@ export default function RangeSlider({sentimentFilterRange, min, max, id}) {
   const handleChange = (event: Event, newValue: number | number[]) => {
     setValue(newValue as number[]);
     sentimentFilterRange(newValue)
+    
   };
 
   return (

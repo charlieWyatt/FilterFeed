@@ -11,7 +11,7 @@ export default function MyGaugeChart({id, myData, friendData = null, startRange,
     }
 
     return (
-        <div class="bg-slate-900">
+        <div className="bg-slate-900">
             <GaugeChart id={id} percent={myPercent}
                     textColor="black"
                     nrOfLevels={5}
