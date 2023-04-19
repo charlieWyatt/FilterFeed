@@ -5,6 +5,9 @@ export const config: PlasmoContentScript = {
   matches: ["*://*.youtube.com/*"]
 }
 
+let semanticSearchFilter = null // this is changed in the addListener function. Should also send a message back to the search bar so that it maintains state even if it is closed and reopened
+let semanticFilterThreshold = 0.5 // this could also be a dynamic value set by the user
+
 window.addEventListener("load", () => {
   console.log(`content script loaded with UUID: ${v4()}`)
   document.body.style.background = "pink"
@@ -27,8 +30,18 @@ const onLoad = () => {
     if(allThumbnails.length > 1) {
       if(tryReadVideoLength(allThumbnails)) {
         clearInterval(intervalId) 
-        handleLoaded(allThumbnails, pageRefreshId)
+        let allTranscripts = getTranscripts(allThumbnails)
+
+        chrome.runtime.onMessage.addListener((msg, sender, response) => {
+          console.log("received a message!", msg)
+          if (msg.command == "sentimentFilterRange"){
+            semanticSearchFilter = msg.semanticSearchFilter
+            console.log(semanticSearchFilter) 
+            handleFilter(allThumbnails, allTranscripts, semanticSearchFilter)
+          }
+        })
       } 
+
     } else {
       console.log('no thumbnails yet')
     }
@@ -55,127 +68,35 @@ function tryReadVideoLength(allThumbnails) {
   }
 }
 
-function addThumbnailsToBackend(thumbnailsDataList) {
-  // videoData is a json object
-  console.log(thumbnailsDataList)
-  fetch("http://127.0.0.1:5000/videosReceiver", {
-          method: 'POST',
-          headers: {
-              'Content-type': 'application/json',
-              'Accept': 'application/json'
-      },
-      // Strigify the payload into JSON:
-      body:JSON.stringify(thumbnailsDataList)}).then(res=>{
-              if(res.ok){
-                  return res.json()
-              }else{
-                  alert("something is wrong")
-              }
-          }).then(jsonResponse=>{
-              
-              // Log the response data in the console
-              console.log(jsonResponse)
-          }).catch((err) => console.error(err));
-          
-  return;
+function semanticScore(transcript) {
+  // this is just a test
+  return 0.5
 }
 
-// taken from here - https://stackoverflow.com/questions/9640266/convert-hhmmss-string-to-seconds-only-in-javascript 
-function hmsToSecondsOnly(str) {
-  var p = str.split(':'),
-      s = 0, m = 1;
-
-  while (p.length > 0) {
-      s += m * parseInt(p.pop(), 10);
-      m *= 60;
+function handleFilter(allThumbnails, allTranscripts, SemanticSearchFilter) {
+  console.log("MADE IT TO FILTER!")
+  console.log(SemanticSearchFilter)
+  if (SemanticSearchFilter == null) {
+    return
   }
 
-  return s;
-}
-
-function getDataFromThumbnail(thumbnail, orderOnScreen, pageRefreshId) {
-  // This must run once all the elements on the page have loaded. Video length is often slow to load
-
-  console.log(thumbnail)
-  // videos 
-  try {
-      let channelName = thumbnail.querySelectorAll("yt-formatted-string.ytd-channel-name")[0].innerText
-      let videoLength = thumbnail.querySelectorAll("ytd-thumbnail-overlay-time-status-renderer")[0].innerText.trim();
-      let videoLengthInSec = hmsToSecondsOnly(videoLength)
-      
-      let videoName = thumbnail.querySelector('#video-title').textContent
-      let metaDataBlock = thumbnail.querySelectorAll('span.ytd-video-meta-block')
-      let videoViews = metaDataBlock[0].innerText
-      let videoUploadDay = metaDataBlock[1].innerText
-      let url = thumbnail.querySelectorAll('a.ytd-thumbnail')[0].href
-      
-      // put in the url into the data
-      // then when you give it to the backend this will be this algorithm run asynchronously
-      //  check if the url is already in the video database
-      //  if it isn't, add the following info
-      //    videoName
-      //    channelName
-      //    videoLengthInSec
-      //    videoViews (? this will change so maybe don't store ? I can do cool things with videos views if I can store when a user visits a video)
-      //    videoUploadDay
-      //    transcript
-      //      positivityScore
-      //      politicalScore
-      //      truthinessScore
-      //      countryOfOrigin
-      //      otherBias
-      //    comments
-
-      let data = {
-          "refreshId": pageRefreshId,
-          "orderOnScreen": orderOnScreen,
-          "channelName": channelName,
-          "videoName": videoName,
-          "videoLengthInSec": videoLengthInSec,
-          "videoViews": videoViews,
-          "videoUploadDay": videoUploadDay,
-          "url": url
-      }
-      return data
-  } catch(err) {
-      // the above sometimes breaks when the video is an add or something
-      console.log(err)
-      return null
+  for(var i = 0; i < allThumbnails.length; i++) {
+    var thumbnail = allThumbnails[i]
+    var transcript = allTranscripts[i]
+    if(semanticScore(transcript) < semanticFilterThreshold) {
+      thumbnail.style.transition = "0.5s"
+      thumbnail.style.opacity = "0"
+    } else {
+        // opacity is used here with a transition otherwise it becomes too "jittery"
+        // I am definitely oversetting it though, should just define all the styles at the start
+        thumbnail.style.transition = "0.5s"
+        thumbnail.style.opacity = "1"
+    }
   }
-
+  console.log(allThumbnails.length) // checking to see if we still have all the thumbnails so we can show again if necessary
 }
 
-// this is just a test so far
-function getDataFromBackend() {
-  fetch('http://127.0.0.1:5000/test')
-    .then(function (response) {
-        console.log(response)
-        return response.json();
-    }).then(function (text) {
-        console.log('GET response:');
-        console.log(text.greeting); // THIS WORKS!
-    });
-}
-
-function handleLoaded(allThumbnails, pageRefreshId) {
-  let pagesThumbailData = []
-
-  let filterPreferences = {}
-  // filterVideos(allVideos, filterPreferences)
-  let thumbnailOrder = 0
-  for(var i = 0; i < allThumbnails.length; i+=1) {
-      // loops through all the videos and adds the data to backend
-      let thumbnailData = getDataFromThumbnail(allThumbnails[i], thumbnailOrder, pageRefreshId)
-      if(thumbnailData) {
-          pagesThumbailData.push(thumbnailData)
-          // addVideoToBackend(videoData)
-          thumbnailOrder += 1 // there was a video, so increment the order you will see on screen
-      }
-  }
-  // should get all the videos and then pass them to the backend all at once
-  addThumbnailsToBackend(pagesThumbailData)
-
-  console.log(pagesThumbailData)
-
-  getDataFromBackend()
+function getTranscripts(allThumbnails) {
+  let transcripts = []
+  return transcripts
 }
